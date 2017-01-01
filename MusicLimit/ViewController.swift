@@ -133,10 +133,11 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
                     self.timerLengthSlider.isUserInteractionEnabled = false
                     self.timerLengthSlider.value -= 0.05
                     self.timerTicks += 1
-                    if self.timerTicks == 60 {
+                    if self.timerTicks == 61 {
                         self.timeRemaining -= 1
-                        self.timerTicks = 0
+                        self.timerTicks = 1
                     }
+                    
                     let seconds = 60 - self.timerTicks
                     if seconds < 10 {
                         self.minutesRemainingLabel.text = String("\(self.timeRemaining):0\(seconds)")
@@ -151,11 +152,16 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
                     print(self.player!.playbackState.position)
                     
                     if self.allowedToGoNext && self.player!.playbackState.position == 0.0 {
-                        print("Should be going to next song")
-                        self.itemUrls.remove(at: 0)
-                        self.itemsLength.remove(at: 0)
-                        self.songHolder.remove(at: 0)
-                        self.playNext()
+                        if self.itemUrls.count > 0 {
+                            print("Should be going to next song")
+                            self.itemUrls.remove(at: 0)
+                            self.itemsLength.remove(at: 0)
+                            self.songHolder.remove(at: 0)
+                            self.playNext()
+                        } else {
+                            print("No songs next, we're done here!")
+                            self.playButton.setImage(UIImage(named: "playIcon"), for: .normal)
+                        }
                         self.allowedToGoNext = false
                     } else {
                         self.allowedToGoNext = true
@@ -175,11 +181,13 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
             
         })
         
-        self.player!.playSpotifyURI(self.itemUrls[0], startingWith: 0, startingWithPosition: 0, callback: { (error) in
-            if (error != nil) {
-                print("\(error!)")
-            }
-        })
+        if self.itemUrls.count > 0 {
+            self.player!.playSpotifyURI(self.itemUrls[0], startingWith: 0, startingWithPosition: 0, callback: { (error) in
+                if (error != nil) {
+                    print("\(error!)")
+                }
+            })
+        }
         
         DispatchQueue.main.async {
             self.songTableView.reloadData()
@@ -230,18 +238,12 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
                                 for track in snapShot.firstTrackPage.items {
                                     if let currTrack = track as? SPTPlaylistTrack {
                                         print("\(self.durationOfItems(self.itemsLength) + currTrack.duration) < \(Double(self.timerLengthSlider.value * 60).rounded())")
-                                        if self.durationOfItems(self.itemsLength) + currTrack.duration < Double(self.timerLengthSlider.value * 60).rounded() {
+                                        if self.durationOfItems(self.itemsLength) + currTrack.duration > Double(Int(self.timerLengthSlider.value) * 60) - 30 && self.durationOfItems(self.itemsLength) + currTrack.duration < Double(Int(self.timerLengthSlider.value) * 60) + 30 {
                                             self.songHolder.append(currTrack)
                                             self.itemsLength.append(currTrack.duration)
                                             self.itemUrls.append(currTrack.playableUri.absoluteString)
                                         }
                                     }
-                                }
-                                
-                                if snapShot.firstTrackPage.nextPageURL != nil {
-                                    snapShot.firstTrackPage.requestNextPage(withAccessToken: self.auth.session.accessToken, callback: {_,_  in
-                                        
-                                    })
                                 }
                             }
                         }
