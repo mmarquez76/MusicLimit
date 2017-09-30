@@ -14,6 +14,7 @@
 		7DB0E3A61F7F677C007577C6 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7DB0E3A41F7F677C007577C6 /* LaunchScreen.storyboard */; };
 		7DB0E3AF1F7F6902007577C6 /* SpotifyAuthentication.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DB0E3AD1F7F6902007577C6 /* SpotifyAuthentication.framework */; };
 		7DB0E3B01F7F6902007577C6 /* SpotifyAudioPlayback.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DB0E3AE1F7F6902007577C6 /* SpotifyAudioPlayback.framework */; };
+		7DCA12B11F802BA600DCDD5A /* SpotifyMetadata.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DCA12B01F802BA600DCDD5A /* SpotifyMetadata.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,6 +28,7 @@
 		7DB0E3AD1F7F6902007577C6 /* SpotifyAuthentication.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = SpotifyAuthentication.framework; sourceTree = "<group>"; };
 		7DB0E3AE1F7F6902007577C6 /* SpotifyAudioPlayback.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = SpotifyAudioPlayback.framework; sourceTree = "<group>"; };
 		7DB0E3BE1F7F89BD007577C6 /* MusicLimit-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MusicLimit-Bridging-Header.h"; sourceTree = "<group>"; };
+		7DCA12B01F802BA600DCDD5A /* SpotifyMetadata.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = SpotifyMetadata.framework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -35,6 +37,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7DB0E3AF1F7F6902007577C6 /* SpotifyAuthentication.framework in Frameworks */,
+				7DCA12B11F802BA600DCDD5A /* SpotifyMetadata.framework in Frameworks */,
 				7DB0E3B01F7F6902007577C6 /* SpotifyAudioPlayback.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -68,6 +71,7 @@
 				7DB0E3A21F7F677C007577C6 /* Assets.xcassets */,
 				7DB0E3A41F7F677C007577C6 /* LaunchScreen.storyboard */,
 				7DB0E3A71F7F677C007577C6 /* Info.plist */,
+				7DCA12B01F802BA600DCDD5A /* SpotifyMetadata.framework */,
 				7DB0E3AE1F7F6902007577C6 /* SpotifyAudioPlayback.framework */,
 				7DB0E3AD1F7F6902007577C6 /* SpotifyAuthentication.framework */,
 			);
