@@ -155,6 +155,15 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
                     if self.timeRemaining == 0 && seconds == 0 {
                         self.removeTimer = true
                     }
+                    
+                    print(self.player!.playbackState.position)
+                    
+                    if self.player!.playbackState.position >= self.itemsLength[x] {
+                        print("Should be going to next song")
+                        self.player!.playSpotifyURI(self.player!.metadata.nextTrack!.uri, startingWith: 0, startingWithPosition: 0, callback: { _ in
+                            
+                        })
+                    }
                 } else {
                     self.removeTimer = false
                     self.timer.invalidate()
@@ -216,6 +225,12 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
                                         }
                                     }
                                 }
+                                
+                                if snapShot.firstTrackPage.nextPageURL != nil {
+                                    snapShot.firstTrackPage.requestNextPage(withAccessToken: self.auth.session.accessToken, callback: {_,_  in
+                                        
+                                    })
+                                }
                             }
                         }
                     })
@@ -259,7 +274,7 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
         } catch {
             
         }
-        cell.trackInfo.text = songHolder[songHolder.count - indexPath.row - 1].name + " - " + (songHolder[indexPath.row].artists as! [SPTPartialArtist])[0].name
+        cell.trackInfo.text = songHolder[songHolder.count - indexPath.row - 1].name + " - " + (songHolder[songHolder.count - indexPath.row - 1].artists as! [SPTPartialArtist])[0].name
         
         return cell
     }
