@@ -7,6 +7,7 @@
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="13173"/>
         <capability name="Aspect ratio constraints" minToolsVersion="5.1"/>
+        <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -71,6 +72,8 @@
                                 <color key="maximumTrackTintColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
                                 <color key="thumbTintColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <connections>
+                                    <action selector="reselectSongs" destination="BYZ-38-t0r" eventType="touchUpOutside" id="QNB-jC-rN2"/>
+                                    <action selector="reselectSongs" destination="BYZ-38-t0r" eventType="touchUpInside" id="U86-m5-Udz"/>
                                     <action selector="updateTimerLength" destination="BYZ-38-t0r" eventType="valueChanged" id="1hB-zm-9bE"/>
                                 </connections>
                             </slider>
@@ -86,7 +89,7 @@
                                 <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="mBI-hu-ZCU">
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" allowsSelection="NO" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="mBI-hu-ZCU">
                                 <rect key="frame" x="0.0" y="477" width="375" height="190"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <constraints>
@@ -94,6 +97,47 @@
                                 </constraints>
                                 <color key="separatorColor" red="0.0" green="0.59103732639999995" blue="0.64854600689999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <inset key="separatorInset" minX="15" minY="0.0" maxX="15" maxY="0.0"/>
+                                <prototypes>
+                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="musicCell" rowHeight="60" id="heS-9l-vaZ" customClass="MusicCell" customModule="MusicLimit" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="28" width="375" height="60"/>
+                                        <autoresizingMask key="autoresizingMask"/>
+                                        <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="heS-9l-vaZ" id="Vj0-ZX-1rc">
+                                            <rect key="frame" x="0.0" y="0.0" width="375" height="59.5"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                            <subviews>
+                                                <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="aBD-ZS-aDY">
+                                                    <rect key="frame" x="0.0" y="0.0" width="59" height="59"/>
+                                                    <constraints>
+                                                        <constraint firstAttribute="width" constant="59" id="Ebb-9g-F9q"/>
+                                                        <constraint firstAttribute="width" secondItem="aBD-ZS-aDY" secondAttribute="height" multiplier="1:1" id="FFR-v0-AOz"/>
+                                                    </constraints>
+                                                </imageView>
+                                                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5so-u4-asW">
+                                                    <rect key="frame" x="67" y="19" width="292" height="21"/>
+                                                    <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                                    <nil key="textColor"/>
+                                                    <nil key="highlightedColor"/>
+                                                </label>
+                                            </subviews>
+                                            <constraints>
+                                                <constraint firstItem="aBD-ZS-aDY" firstAttribute="top" secondItem="Vj0-ZX-1rc" secondAttribute="top" id="1dg-sf-BpH"/>
+                                                <constraint firstItem="5so-u4-asW" firstAttribute="leading" secondItem="aBD-ZS-aDY" secondAttribute="trailing" constant="8" id="28v-P2-Dg5"/>
+                                                <constraint firstItem="5so-u4-asW" firstAttribute="centerY" secondItem="Vj0-ZX-1rc" secondAttribute="centerY" id="9ev-zp-4l8"/>
+                                                <constraint firstAttribute="trailingMargin" secondItem="5so-u4-asW" secondAttribute="trailing" constant="8" id="PTj-bN-ZSD"/>
+                                                <constraint firstAttribute="bottom" secondItem="aBD-ZS-aDY" secondAttribute="bottom" id="RY1-vc-r3m"/>
+                                                <constraint firstItem="aBD-ZS-aDY" firstAttribute="leading" secondItem="Vj0-ZX-1rc" secondAttribute="leading" id="nTn-Iq-G4w"/>
+                                            </constraints>
+                                        </tableViewCellContentView>
+                                        <connections>
+                                            <outlet property="trackInfo" destination="5so-u4-asW" id="nlP-gU-OBp"/>
+                                            <outlet property="trackThumbnail" destination="aBD-ZS-aDY" id="Gag-7u-coZ"/>
+                                        </connections>
+                                    </tableViewCell>
+                                </prototypes>
+                                <connections>
+                                    <outlet property="dataSource" destination="BYZ-38-t0r" id="lPT-xd-xBb"/>
+                                    <outlet property="delegate" destination="BYZ-38-t0r" id="5f3-R5-qs0"/>
+                                </connections>
                             </tableView>
                             <button hidden="YES" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="HoK-gE-vUC">
                                 <rect key="frame" x="318" y="420" width="45" height="45"/>
@@ -105,7 +149,7 @@
                                     <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 </state>
                                 <connections>
-                                    <action selector="startPlayingSongs" destination="BYZ-38-t0r" eventType="touchUpInside" id="RGY-Ye-x6Q"/>
+                                    <action selector="playSongs" destination="BYZ-38-t0r" eventType="touchUpInside" id="f3H-eQ-glC"/>
                                 </connections>
                             </button>
                         </subviews>
@@ -140,6 +184,7 @@
                         <outlet property="loginButton" destination="IzC-ai-SqM" id="kvz-0A-q6y"/>
                         <outlet property="minutesRemainingLabel" destination="Fyf-Va-gKE" id="WAQ-vd-gCe"/>
                         <outlet property="playButton" destination="HoK-gE-vUC" id="hUo-za-SPY"/>
+                        <outlet property="songTableView" destination="mBI-hu-ZCU" id="jd5-Em-uwT"/>
                         <outlet property="timerLengthSlider" destination="ub5-1m-PIs" id="Uzn-ub-gRC"/>
                         <outlet property="unitLabel" destination="SMj-eB-oZ3" id="FT1-Az-5Cl"/>
                     </connections>

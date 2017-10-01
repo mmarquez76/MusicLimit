@@ -8,16 +8,16 @@
 
 import UIKit
 
-class ViewController: UIViewController, SPTCoreAudioControllerDelegate {
+class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableViewDelegate, UITableViewDataSource {
     @IBOutlet var loginButton:UIButton!
     @IBOutlet var timerLengthSlider:UISlider!
-    @IBOutlet var songsForSession:UITableView!
     @IBOutlet var playButton:UIButton!
     @IBOutlet var minutesRemainingLabel:UILabel!
     @IBOutlet var unitLabel:UILabel!
     @IBOutlet var timeDifferenceFromLastShowerLabel:UILabel!
     @IBOutlet var shortestShowerLabel:UILabel!
     @IBOutlet var longestShowerLabel:UILabel!
+    @IBOutlet var songTableView:UITableView!
     
     var colorLibraryR2W:[CGFloat] = [0.016,0.032,0.064,0.08,0.096,0.112,0.128,0.144,0.16,0.176,0.192,0.208,0.224,0.24,0.256,0.272,0.288,0.304,0.32,0.336,0.352,0.368,0.384,0.4,0.416,0.432,0.448,0.464,0.48,0.496,0.512,0.528,0.544,0.56,0.576,0.592,0.608,0.624,0.64,0.656,0.672,0.688,0.704,0.72,0.736,0.752,0.768,0.784,0.8,0.816,0.832,0.848,0.864,0.88,0.896,0.912,0.928,0.944,0.976,0.992]
     var auth = SPTAuth.defaultInstance()!
@@ -25,6 +25,12 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate {
     var player: SPTAudioStreamingController?
     var loginUrl: URL?
     var usersPlaylist:SPTPlaylistList?
+    var itemUrls = [String]()
+    var itemsLength = [Double]()
+    var timer:Timer!
+    var timeRemaining = 0
+    var timerTicks = 0
+    var songHolder = [SPTPlaylistTrack]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -32,7 +38,7 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate {
         NotificationCenter.default.addObserver(self, selector: #selector(ViewController.updateAfterFirstLogin), name: Notification.Name(rawValue: "loginSuccessfull"), object: nil)
         // Do any additional setup after loading the view, typically from a nib.
     }
-
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
@@ -69,6 +75,7 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate {
             }
             
             self.player!.login(withAccessToken: authSession.accessToken)
+            self.findSongs()
         }
     }
     
@@ -81,12 +88,14 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate {
             })
         } else {
             print("Should be good 2 go")
-            startPlayingSongs()
         }
     }
     
     @IBAction func reselectSongs() {
-        
+        itemsLength = [Double]()
+        itemUrls = [String]()
+        songHolder = [SPTPlaylistTrack]()
+        findSongs()
     }
     
     @IBAction func updateTimerLength() {
@@ -99,45 +108,156 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate {
         unitLabel.textColor = color
     }
     
-    @IBAction func startPlayingSongs() {
+    func startPlayingSongs() {
         // after a user authenticates a session, the SPTAudioStreamingController is then initialized and this method called
+        let urls = itemUrls
         if self.player!.loggedIn {
-            print("logged in \(self.player!.loggedIn)")
-            loginButton.isHidden = true
-            unitLabel.isHidden = false
-            minutesRemainingLabel.isHidden = false
-            timerLengthSlider.isHidden = false
-            playButton.isHidden = false
-            self.player!.playSpotifyURI("spotify:track:1TZ3z6TBztuY0TLUlJZ8R7", startingWith: 0, startingWithPosition: 0, callback: { (error) in
+            var x = 0
+            print(urls.count)
+            timeRemaining = Int(durationOfItems(itemsLength)/60)
+            while x < urls.count - 1 {
+                self.player!.queueSpotifyURI(urls[x], callback: {_ in
+                    
+                })
+                x += 1
+            }
+            
+            self.player!.playSpotifyURI(urls[x], startingWith: 0, startingWithPosition: 0, callback: { (error) in
                 if (error != nil) {
                     print("\(error!)")
+                }
+            })
+            self.timerLengthSlider.value += 1
+            self.timeRemaining = (Int(durationOfItems(itemsLength)) + 1)/60 + 1
+            
+            if self.timeRemaining >= 1 {
+                self.timerLengthSlider.isUserInteractionEnabled = false
+                self.timerLengthSlider.value -= 0.05
+                self.timeRemaining -= 1
+                self.minutesRemainingLabel.text = String("\(self.timeRemaining)")
+            }
+            
+            timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true, block: { _ in
+                if self.timeRemaining >= 1 {
+                    self.timerLengthSlider.isUserInteractionEnabled = false
+                    self.timerLengthSlider.value -= 0.05
+                    self.timerTicks += 1
+                    if self.timerTicks == 60 {
+                        self.timeRemaining -= 1
+                        self.timerTicks = 0
+                    }
+                    let seconds = 60 - self.timerTicks
+                    if seconds < 10 {
+                        self.minutesRemainingLabel.text = String("\(self.timeRemaining):0\(seconds)")
+                    } else {
+                        self.minutesRemainingLabel.text = String("\(self.timeRemaining):\(seconds)")
+                    }
+                } else {
+                    self.timer.invalidate()
+                    self.timerLengthSlider.isUserInteractionEnabled = true
+                    self.timer = nil
                 }
             })
         }
     }
     
-    @IBAction func findSongs(_ withTimeConstraint:Int) {
-        usersPlaylist = SPTPlaylistList.playlists(forUser: auth.session.canonicalUsername, withAccessToken: auth.session.accessToken, callback: nil)
+    @IBAction func playSongs() {
+        if timer != nil {
+            if timer.isValid {
+                self.timer.invalidate()
+            }
+            self.timer = nil
+        }
+        self.startPlayingSongs()
+        DispatchQueue.main.async {
+            self.songTableView.reloadData()
+        }
+        print("Chosen song combo duration: \(self.durationOfItems(self.itemsLength))")
+    }
+    
+    func findSongs() {
+        itemsLength = [Double]()
+        itemUrls = [String]()
+        SPTPlaylistList.playlists(forUser: auth.session.canonicalUsername, withAccessToken: auth.session.accessToken, callback: { (error, playlist) in
+            if playlist != nil {
+                self.usersPlaylist = playlist as? SPTPlaylistList
+                var x = 0
+                while x < self.usersPlaylist!.items.count {
+                    let rand:Int = Int(arc4random_uniform(UInt32(self.usersPlaylist!.items.count)))
+                    let pp = self.usersPlaylist!.items[rand] as! SPTPartialPlaylist
+                    print(pp.name)
+                    print(pp.trackCount)
+                    SPTPlaylistSnapshot.playlist(withURI: pp.uri, accessToken: self.auth.session.accessToken, callback: { (error,snap) in
+                        if let snapShot = snap as? SPTPlaylistSnapshot {
+                            print(snapShot.name)
+                            print(snapShot.trackCount)
+                            if snapShot.firstTrackPage.items != nil {
+                                for track in snapShot.firstTrackPage.items {
+                                    if let currTrack = track as? SPTPlaylistTrack {
+                                        print("\(self.durationOfItems(self.itemsLength) + currTrack.duration) < \(Double(self.timerLengthSlider.value * 60).rounded())")
+                                        if self.durationOfItems(self.itemsLength) + currTrack.duration < Double(self.timerLengthSlider.value * 60).rounded() {
+                                            self.songHolder.append(currTrack)
+                                            self.itemsLength.append(currTrack.duration)
+                                            self.itemUrls.append(currTrack.playableUri.absoluteString)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    })
+                    x += 1
+                }
+            }
+        })
+    }
+    
+    func durationOfItems(_ items:[Double]) -> Double {
+        var totalDuration:Double = 0
+        
+        var x = 0
+        while x < items.count {
+            totalDuration += Double(items[x])
+            x += 1
+        }
+        
+        return totalDuration
     }
     
     override var prefersStatusBarHidden: Bool {
         return true
     }
-}
-
-extension ViewController: SPTAudioStreamingDelegate, SPTAudioStreamingPlaybackDelegate {
-    func audioStreamingDidLogin(_ audioStreaming: SPTAudioStreamingController!) {
-        loginButton.isHidden = true
-        unitLabel.isHidden = false
-        minutesRemainingLabel.isHidden = false
-        timerLengthSlider.isHidden = false
-        playButton.isHidden = false
-        print("logged in")
-        
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return songHolder.count
     }
     
-    func audioStreamingDidEncounterTemporaryConnectionError(_ audioStreaming: SPTAudioStreamingController!) {
-        print("Oh no...")
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = self.songTableView.dequeueReusableCell(withIdentifier: "musicCell") as! MusicCell
+        do {
+            let imgData = try Data(contentsOf: songHolder[songHolder.count - indexPath.row - 1].album.smallestCover.imageURL)
+            cell.trackThumbnail.image = UIImage(data: imgData)
+        } catch {
+            
+        }
+        cell.trackInfo.text = songHolder[songHolder.count - indexPath.row - 1].name + " - " + (songHolder[indexPath.row].artists as! [SPTPartialArtist])[0].name
+        
+        return cell
     }
 }
-
+    
+    extension ViewController: SPTAudioStreamingDelegate, SPTAudioStreamingPlaybackDelegate {
+        func audioStreamingDidLogin(_ audioStreaming: SPTAudioStreamingController!) {
+            loginButton.isHidden = true
+            unitLabel.isHidden = false
+            minutesRemainingLabel.isHidden = false
+            timerLengthSlider.isHidden = false
+            playButton.isHidden = false
+            print("logged in")
+            
+        }
+        
+        func audioStreamingDidEncounterTemporaryConnectionError(_ audioStreaming: SPTAudioStreamingController!) {
+            print("Oh no...")
+        }
+    }
+    
