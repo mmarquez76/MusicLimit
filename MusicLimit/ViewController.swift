@@ -30,6 +30,7 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
     var timerTicks = 0
     var songHolder = [SPTPlaylistTrack]()
     var removeTimer = false
+    var allowedToGoNext = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -109,19 +110,10 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
     
     func startPlayingSongs() {
         // after a user authenticates a session, the SPTAudioStreamingController is then initialized and this method called
-        let urls = itemUrls
-        if self.player!.loggedIn && urls.count > 0 {
-            var x = 0
-            print(urls.count)
+        if self.player!.loggedIn && self.itemUrls.count > 0 {
+            print(self.itemUrls.count)
             timeRemaining = Int(durationOfItems(itemsLength)/60)
-            while x < urls.count - 1 {
-                self.player!.queueSpotifyURI(urls[x], callback: {_ in
-                    
-                })
-                x += 1
-            }
-            
-            self.player!.playSpotifyURI(urls[x], startingWith: 0, startingWithPosition: 0, callback: { (error) in
+            self.player!.playSpotifyURI(self.itemUrls[0], startingWith: 0, startingWithPosition: 0, callback: { (error) in
                 if (error != nil) {
                     print("\(error!)")
                 }
@@ -158,11 +150,15 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
                     
                     print(self.player!.playbackState.position)
                     
-                    if self.player!.playbackState.position >= self.itemsLength[x] {
+                    if self.allowedToGoNext && self.player!.playbackState.position == 0.0 {
                         print("Should be going to next song")
-                        self.player!.playSpotifyURI(self.player!.metadata.nextTrack!.uri, startingWith: 0, startingWithPosition: 0, callback: { _ in
-                            
-                        })
+                        self.itemUrls.remove(at: 0)
+                        self.itemsLength.remove(at: 0)
+                        self.songHolder.remove(at: 0)
+                        self.playNext()
+                        self.allowedToGoNext = false
+                    } else {
+                        self.allowedToGoNext = true
                     }
                 } else {
                     self.removeTimer = false
@@ -171,6 +167,22 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
                     self.timer = nil
                 }
             })
+        }
+    }
+    
+    func playNext() {
+        self.player!.setIsPlaying(false, callback: {_ in
+            
+        })
+        
+        self.player!.playSpotifyURI(self.itemUrls[0], startingWith: 0, startingWithPosition: 0, callback: { (error) in
+            if (error != nil) {
+                print("\(error!)")
+            }
+        })
+        
+        DispatchQueue.main.async {
+            self.songTableView.reloadData()
         }
     }
     
@@ -267,14 +279,14 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = self.songTableView.dequeueReusableCell(withIdentifier: "musicCell") as! MusicCell
         do {
-            let imgData = try Data(contentsOf: songHolder[songHolder.count - indexPath.row - 1].album.smallestCover.imageURL)
+            let imgData = try Data(contentsOf: songHolder[indexPath.row].album.smallestCover.imageURL)
             cell.trackThumbnail.image = UIImage(data: imgData)
             cell.trackThumbnail.layer.cornerRadius = cell.trackThumbnail.image!.size.width/2
             cell.trackThumbnail.clipsToBounds = true
         } catch {
             
         }
-        cell.trackInfo.text = songHolder[songHolder.count - indexPath.row - 1].name + " - " + (songHolder[songHolder.count - indexPath.row - 1].artists as! [SPTPartialArtist])[0].name
+        cell.trackInfo.text = songHolder[indexPath.row].name + " - " + (songHolder[indexPath.row].artists as! [SPTPartialArtist])[0].name
         
         return cell
     }
