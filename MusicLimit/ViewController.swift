@@ -7,6 +7,7 @@
 //  Set a timer where music is selected to fit the alloted time within +/- 15s. Uses a slider in the middle to select time. Shows songs in tableview that are in queue. Shows time saved in comparison to last shower. Should have a 3-5 second delay before starting.
 
 import UIKit
+import QuartzCore
 
 class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableViewDelegate, UITableViewDataSource {
     @IBOutlet var loginButton:UIButton!
@@ -14,9 +15,6 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
     @IBOutlet var playButton:UIButton!
     @IBOutlet var minutesRemainingLabel:UILabel!
     @IBOutlet var unitLabel:UILabel!
-    @IBOutlet var timeDifferenceFromLastShowerLabel:UILabel!
-    @IBOutlet var shortestShowerLabel:UILabel!
-    @IBOutlet var longestShowerLabel:UILabel!
     @IBOutlet var songTableView:UITableView!
     
     var colorLibraryR2W:[CGFloat] = [0.016,0.032,0.064,0.08,0.096,0.112,0.128,0.144,0.16,0.176,0.192,0.208,0.224,0.24,0.256,0.272,0.288,0.304,0.32,0.336,0.352,0.368,0.384,0.4,0.416,0.432,0.448,0.464,0.48,0.496,0.512,0.528,0.544,0.56,0.576,0.592,0.608,0.624,0.64,0.656,0.672,0.688,0.704,0.72,0.736,0.752,0.768,0.784,0.8,0.816,0.832,0.848,0.864,0.88,0.896,0.912,0.928,0.944,0.976,0.992]
@@ -31,6 +29,7 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
     var timeRemaining = 0
     var timerTicks = 0
     var songHolder = [SPTPlaylistTrack]()
+    var removeTimer = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -111,7 +110,7 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
     func startPlayingSongs() {
         // after a user authenticates a session, the SPTAudioStreamingController is then initialized and this method called
         let urls = itemUrls
-        if self.player!.loggedIn {
+        if self.player!.loggedIn && urls.count > 0 {
             var x = 0
             print(urls.count)
             timeRemaining = Int(durationOfItems(itemsLength)/60)
@@ -138,7 +137,7 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
             }
             
             timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true, block: { _ in
-                if self.timeRemaining >= 1 {
+                if !self.removeTimer {
                     self.timerLengthSlider.isUserInteractionEnabled = false
                     self.timerLengthSlider.value -= 0.05
                     self.timerTicks += 1
@@ -152,7 +151,12 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
                     } else {
                         self.minutesRemainingLabel.text = String("\(self.timeRemaining):\(seconds)")
                     }
+                    
+                    if self.timeRemaining == 0 && seconds == 0 {
+                        self.removeTimer = true
+                    }
                 } else {
+                    self.removeTimer = false
                     self.timer.invalidate()
                     self.timerLengthSlider.isUserInteractionEnabled = true
                     self.timer = nil
@@ -163,12 +167,22 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
     
     @IBAction func playSongs() {
         if timer != nil {
+            self.removeTimer = false
             if timer.isValid {
                 self.timer.invalidate()
             }
             self.timer = nil
+            self.reselectSongs()
+            self.timerLengthSlider.isUserInteractionEnabled = true
+            self.player!.setIsPlaying(false, callback: {_ in
+                
+            })
+            self.playButton.setImage(UIImage(named: "playIcon"), for: .normal)
+        } else {
+            self.playButton.setImage(UIImage(named: "pauseIcon"), for: .normal)
+            self.startPlayingSongs()
         }
-        self.startPlayingSongs()
+        
         DispatchQueue.main.async {
             self.songTableView.reloadData()
         }
@@ -209,6 +223,10 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
                 }
             }
         })
+        
+        DispatchQueue.main.async {
+            self.songTableView.reloadData()
+        }
     }
     
     func durationOfItems(_ items:[Double]) -> Double {
@@ -236,6 +254,8 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
         do {
             let imgData = try Data(contentsOf: songHolder[songHolder.count - indexPath.row - 1].album.smallestCover.imageURL)
             cell.trackThumbnail.image = UIImage(data: imgData)
+            cell.trackThumbnail.layer.cornerRadius = cell.trackThumbnail.image!.size.width/2
+            cell.trackThumbnail.clipsToBounds = true
         } catch {
             
         }

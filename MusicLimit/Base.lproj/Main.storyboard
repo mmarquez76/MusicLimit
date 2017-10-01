@@ -36,15 +36,6 @@
                                 </textAttributes>
                                 <items>
                                     <navigationItem title="Set Timer" id="rZy-iz-7TO">
-                                        <barButtonItem key="leftBarButtonItem" image="bars" style="plain" id="QXG-k8-jGZ">
-                                            <button key="customView" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" id="loi-xQ-vtl">
-                                                <rect key="frame" x="16" y="8" width="43" height="28"/>
-                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                                <color key="tintColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                                                <state key="normal" image="bars"/>
-                                            </button>
-                                            <color key="tintColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                                        </barButtonItem>
                                         <barButtonItem key="rightBarButtonItem" title="Title Bar" style="plain" id="6oa-4y-fHm">
                                             <button key="customView" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" id="Ui4-cc-waW">
                                                 <rect key="frame" x="322" y="4" width="37" height="36"/>
@@ -98,34 +89,32 @@
                                 <color key="separatorColor" red="0.0" green="0.59103732639999995" blue="0.64854600689999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <inset key="separatorInset" minX="15" minY="0.0" maxX="15" maxY="0.0"/>
                                 <prototypes>
-                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="musicCell" rowHeight="60" id="heS-9l-vaZ" customClass="MusicCell" customModule="MusicLimit" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="28" width="375" height="60"/>
+                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="musicCell" rowHeight="75" id="heS-9l-vaZ" customClass="MusicCell" customModule="MusicLimit" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="28" width="375" height="75"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                         <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="heS-9l-vaZ" id="Vj0-ZX-1rc">
-                                            <rect key="frame" x="0.0" y="0.0" width="375" height="59.5"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="375" height="74.5"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
                                                 <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="aBD-ZS-aDY">
-                                                    <rect key="frame" x="0.0" y="0.0" width="59" height="59"/>
+                                                    <rect key="frame" x="10" y="10" width="46.5" height="46.5"/>
                                                     <constraints>
-                                                        <constraint firstAttribute="width" constant="59" id="Ebb-9g-F9q"/>
                                                         <constraint firstAttribute="width" secondItem="aBD-ZS-aDY" secondAttribute="height" multiplier="1:1" id="FFR-v0-AOz"/>
                                                     </constraints>
                                                 </imageView>
                                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5so-u4-asW">
-                                                    <rect key="frame" x="67" y="19" width="292" height="21"/>
+                                                    <rect key="frame" x="317" y="27" width="42" height="21"/>
                                                     <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                                     <nil key="textColor"/>
                                                     <nil key="highlightedColor"/>
                                                 </label>
                                             </subviews>
                                             <constraints>
-                                                <constraint firstItem="aBD-ZS-aDY" firstAttribute="top" secondItem="Vj0-ZX-1rc" secondAttribute="top" id="1dg-sf-BpH"/>
-                                                <constraint firstItem="5so-u4-asW" firstAttribute="leading" secondItem="aBD-ZS-aDY" secondAttribute="trailing" constant="8" id="28v-P2-Dg5"/>
                                                 <constraint firstItem="5so-u4-asW" firstAttribute="centerY" secondItem="Vj0-ZX-1rc" secondAttribute="centerY" id="9ev-zp-4l8"/>
+                                                <constraint firstItem="aBD-ZS-aDY" firstAttribute="leading" secondItem="Vj0-ZX-1rc" secondAttribute="leading" constant="10" id="Kkk-Lc-UdZ"/>
+                                                <constraint firstItem="aBD-ZS-aDY" firstAttribute="top" secondItem="Vj0-ZX-1rc" secondAttribute="top" constant="10" id="Mch-Ak-YwE"/>
                                                 <constraint firstAttribute="trailingMargin" secondItem="5so-u4-asW" secondAttribute="trailing" constant="8" id="PTj-bN-ZSD"/>
-                                                <constraint firstAttribute="bottom" secondItem="aBD-ZS-aDY" secondAttribute="bottom" id="RY1-vc-r3m"/>
-                                                <constraint firstItem="aBD-ZS-aDY" firstAttribute="leading" secondItem="Vj0-ZX-1rc" secondAttribute="leading" id="nTn-Iq-G4w"/>
+                                                <constraint firstAttribute="bottomMargin" secondItem="aBD-ZS-aDY" secondAttribute="bottom" constant="10" id="lVO-ae-hQE"/>
                                             </constraints>
                                         </tableViewCellContentView>
                                         <connections>
@@ -145,7 +134,7 @@
                                     <constraint firstAttribute="width" secondItem="HoK-gE-vUC" secondAttribute="height" multiplier="1:1" id="ayh-ys-R3u"/>
                                     <constraint firstAttribute="width" constant="45" id="deI-Lx-0Op"/>
                                 </constraints>
-                                <state key="normal" title="|&gt;" image="playIcon">
+                                <state key="normal" image="playIcon">
                                     <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 </state>
                                 <connections>
@@ -195,7 +184,6 @@
         </scene>
     </scenes>
     <resources>
-        <image name="bars" width="43" height="28"/>
         <image name="playIcon" width="115" height="128"/>
         <image name="water" width="4237" height="2983"/>
     </resources>
