@@ -1,4 +1,4 @@
-	//
+//
 //  ViewController.swift
 //  MusicLimit
 //
@@ -8,6 +8,11 @@
 
 import UIKit
 import QuartzCore
+import AVFoundation
+
+var selectedPlaylist = -1
+var choiceNames = [String]()
+var VCref:ViewController!
 
 class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableViewDelegate, UITableViewDataSource {
     @IBOutlet var loginButton:UIButton!
@@ -16,6 +21,8 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
     @IBOutlet var minutesRemainingLabel:UILabel!
     @IBOutlet var unitLabel:UILabel!
     @IBOutlet var songTableView:UITableView!
+    @IBOutlet var sourceSelect:UIButton!
+    @IBOutlet var songTableHeight:NSLayoutConstraint!
     
     var colorLibraryR2W:[CGFloat] = [0.016,0.032,0.064,0.08,0.096,0.112,0.128,0.144,0.16,0.176,0.192,0.208,0.224,0.24,0.256,0.272,0.288,0.304,0.32,0.336,0.352,0.368,0.384,0.4,0.416,0.432,0.448,0.464,0.48,0.496,0.512,0.528,0.544,0.56,0.576,0.592,0.608,0.624,0.64,0.656,0.672,0.688,0.704,0.72,0.736,0.752,0.768,0.784,0.8,0.816,0.832,0.848,0.864,0.88,0.896,0.912,0.928,0.944,0.976,0.992]
     var auth = SPTAuth.defaultInstance()!
@@ -37,7 +44,20 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
         super.viewDidLoad()
         self.setUp()
         NotificationCenter.default.addObserver(self, selector: #selector(ViewController.updateAfterFirstLogin), name: Notification.Name(rawValue: "loginSuccessfull"), object: nil)
+        VCref = self
+        self.updateSourceTitle()
         // Do any additional setup after loading the view, typically from a nib.
+    }
+    
+    func updateSourceTitle() {
+        print("Playlist: \(selectedPlaylist)")
+        if selectedPlaylist == -1 {
+            sourceSelect.setTitle("Source: All Playlists", for: .normal)
+            sourceSelect.setTitle("Source: All Playlists", for: .highlighted)
+        } else {
+            sourceSelect.setTitle("Source: \(choiceNames[selectedPlaylist])", for: .normal)
+            sourceSelect.setTitle("Source: \(choiceNames[selectedPlaylist])", for: .highlighted)
+        }
     }
     
     override func didReceiveMemoryWarning() {
@@ -76,6 +96,10 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
             }
             
             self.player!.login(withAccessToken: authSession.accessToken)
+            UIView.animate(withDuration: 1.5, animations: {
+                self.songTableHeight.constant = 190
+                self.updateViewConstraints()
+            })
             self.findSongs()
         }
     }
@@ -127,7 +151,7 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
                 self.timerLengthSlider.isUserInteractionEnabled = false
                 self.timerLengthSlider.value -= Float(CGFloat(self.timerLengthSlider.value)/CGFloat(self.timeRemaining))
                 self.timeRemaining -= 1
-                let seconds = Int(self.timeRemaining.truncatingRemainder(dividingBy: 60).rounded())
+                let seconds = Int(self.timeRemaining.truncatingRemainder(dividingBy: 60).rounded() - 1)
                 if seconds < 10 {
                     self.minutesRemainingLabel.text = "\(Int(self.timeRemaining/60)):0\(seconds)"
                 } else {
@@ -140,13 +164,19 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
                     self.timerLengthSlider.isUserInteractionEnabled = false
                     self.timerLengthSlider.value -= Float(CGFloat(self.timerLengthSlider.value)/CGFloat(self.timeRemaining))
                     
-                    let seconds = Int(self.timeRemaining.truncatingRemainder(dividingBy: 60).rounded())
+                    let seconds = Int(self.timeRemaining.truncatingRemainder(dividingBy: 60).rounded() - 1)
                     if seconds < 10 {
                         self.minutesRemainingLabel.text = "\(Int(self.timeRemaining/60)):0\(seconds)"
                     } else {
                         self.minutesRemainingLabel.text = "\(Int(self.timeRemaining/60)):\(seconds)"
                     }
                     self.timeRemaining -= 1
+                    
+                    if Int(self.timeRemaining.rounded()) % 5 == 0 {
+                        DispatchQueue.main.async {
+                            self.songTableView.reloadData()
+                        }
+                    }
                     
                     if self.timeRemaining == 0 {
                         self.removeTimer = true
@@ -191,10 +221,6 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
                     self.timerLengthSlider.isUserInteractionEnabled = true
                     self.timer = nil
                 }
-                
-                DispatchQueue.main.async {
-                    self.songTableView.reloadData()
-                }
             })
         }
     }
@@ -229,16 +255,8 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
             })
             self.playButton.setImage(UIImage(named: "playIcon"), for: .normal)
         } else {
-            if self.durationOfItems(self.itemsLength) > 0.5 {
-                self.playButton.setImage(UIImage(named: "pauseIcon"), for: .normal)
-                self.startPlayingSongs()
-            } else {
-                self.reselectSongs()
-                self.timerLengthSlider.value = Float(self.lastSliderValue)
-                self.minutesRemainingLabel.text = "\(self.lastSliderValue)"
-                self.timerLengthSlider.isUserInteractionEnabled = true
-                self.playButton.setImage(UIImage(named: "playIcon"), for: .normal)
-            }
+            self.startPlayingSongs()
+            self.playButton.setImage(UIImage(named: "pauseIcon"), for: .normal)
         }
     }
     
@@ -249,59 +267,109 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
         SPTPlaylistList.playlists(forUser: auth.session.canonicalUsername, withAccessToken: auth.session.accessToken, callback: { (error, playlist) in
             if playlist != nil {
                 self.usersPlaylist = playlist as? SPTPlaylistList
-                var usedX_Nums = [Int]()
-                while usedX_Nums.count < self.usersPlaylist!.items.count {
-                    let rand = Int(arc4random_uniform(UInt32(self.usersPlaylist!.items.count)))
-                    if !usedX_Nums.contains(rand) {
-                        usedX_Nums.append(rand)
-                        let pp = self.usersPlaylist!.items[rand] as! SPTPartialPlaylist
-                        print(pp.name)
-                        print(pp.trackCount)
-                        SPTPlaylistSnapshot.playlist(withURI: pp.uri, accessToken: self.auth.session.accessToken, callback: { (error,snap) in
-                            if let snapShot = snap as? SPTPlaylistSnapshot {
-                                if snapShot.firstTrackPage != nil {
-                                    if snapShot.firstTrackPage.items != nil {
-                                        var usedY_Nums = [Int]()
-                                        while usedY_Nums.count < snapShot.firstTrackPage.items.count {
-                                            let randY = Int(arc4random_uniform(UInt32(snapShot.firstTrackPage.items.count)))
-                                            if !usedY_Nums.contains(randY) {
-                                                usedY_Nums.append(randY)
-                                                if let currTrack = snapShot.firstTrackPage.items[randY] as? SPTPlaylistTrack {
-                                                    if self.durationOfItems(self.itemsLength) + currTrack.duration < Double(Int(self.timerLengthSlider.value) * 60) + 15 && (!self.songHolder.contains(currTrack) || self.songHolder.count == 0) {
-                                                        self.songHolder.append(currTrack)
-                                                        self.itemsLength.append(currTrack.duration)
-                                                        self.itemUrls.append(currTrack.playableUri.absoluteString)
+                if selectedPlaylist == -1 && self.usersPlaylist!.items != nil {
+                    var usedX_Nums = [Int]()
+                    while usedX_Nums.count < self.usersPlaylist!.items.count {
+                        let rand = Int(arc4random_uniform(UInt32(self.usersPlaylist!.items.count)))
+                        if !usedX_Nums.contains(rand) {
+                            usedX_Nums.append(rand)
+                            let pp = self.usersPlaylist!.items[rand] as! SPTPartialPlaylist
+                            print(pp.name)
+                            print(pp.trackCount)
+                            SPTPlaylistSnapshot.playlist(withURI: pp.uri, accessToken: self.auth.session.accessToken, callback: { (error,snap) in
+                                if let snapShot = snap as? SPTPlaylistSnapshot {
+                                    if snapShot.firstTrackPage != nil {
+                                        if snapShot.firstTrackPage.items != nil {
+                                            var usedY_Nums = [Int]()
+                                            while usedY_Nums.count < snapShot.firstTrackPage.items.count {
+                                                let randY = Int(arc4random_uniform(UInt32(snapShot.firstTrackPage.items.count)))
+                                                if !usedY_Nums.contains(randY) {
+                                                    usedY_Nums.append(randY)
+                                                    if let currTrack = snapShot.firstTrackPage.items[randY] as? SPTPlaylistTrack {
+                                                        if self.durationOfItems(self.itemsLength) + currTrack.duration < Double(Int(self.timerLengthSlider.value) * 60) + 15 && (!self.songHolder.contains(currTrack) || self.songHolder.count == 0) && currTrack.playableUri != nil {
+                                                            self.songHolder.append(currTrack)
+                                                            self.itemsLength.append(currTrack.duration)
+                                                            self.itemUrls.append(currTrack.playableUri.absoluteString)
+                                                        }
                                                     }
+                                                }
+                                            }
+                                        }
+                                        
+                                        /*
+                                         snapShot.firstTrackPage.requestNextPage(withAccessToken: self.auth.session.accessToken, callback: { (error,snap2) in
+                                         if let snapShot2 = snap2 as? SPTPlaylistSnapshot {
+                                         if snapShot2.firstTrackPage != nil {
+                                         if snapShot2.firstTrackPage.items != nil {
+                                         var y = 0
+                                         while y < snapShot2.firstTrackPage.items.count {
+                                         if let currTrack = snapShot2.firstTrackPage.items[y] as? SPTPlaylistTrack {
+                                         if self.durationOfItems(self.itemsLength) + currTrack.duration < Double(Int(self.timerLengthSlider.value) * 60) + 15 && (!self.songHolder.contains(currTrack) || self.songHolder.count == 0) {
+                                         self.songHolder.append(currTrack)
+                                         self.itemsLength.append(currTrack.duration)
+                                         self.itemUrls.append(currTrack.playableUri.absoluteString)
+                                         }
+                                         }
+                                         y += 1
+                                         }
+                                         }
+                                         }
+                                         }
+                                         })
+                                         */
+                                    }
+                                }
+                            })
+                        }
+                    }
+                } else if self.usersPlaylist!.items != nil {
+                    let pp = self.usersPlaylist!.items[selectedPlaylist] as! SPTPartialPlaylist
+                    print(pp.name)
+                    print(pp.trackCount)
+                    SPTPlaylistSnapshot.playlist(withURI: pp.uri, accessToken: self.auth.session.accessToken, callback: { (error,snap) in
+                        if let snapShot = snap as? SPTPlaylistSnapshot {
+                            if snapShot.firstTrackPage != nil {
+                                if snapShot.firstTrackPage.items != nil {
+                                    var usedY_Nums = [Int]()
+                                    while usedY_Nums.count < snapShot.firstTrackPage.items.count {
+                                        let randY = Int(arc4random_uniform(UInt32(snapShot.firstTrackPage.items.count)))
+                                        if !usedY_Nums.contains(randY) {
+                                            usedY_Nums.append(randY)
+                                            if let currTrack = snapShot.firstTrackPage.items[randY] as? SPTPlaylistTrack {
+                                                if self.durationOfItems(self.itemsLength) + currTrack.duration < Double(Int(self.timerLengthSlider.value) * 60) + 15 && (!self.songHolder.contains(currTrack) || self.songHolder.count == 0) && currTrack.playableUri != nil {
+                                                    self.songHolder.append(currTrack)
+                                                    self.itemsLength.append(currTrack.duration)
+                                                    self.itemUrls.append(currTrack.playableUri.absoluteString)
                                                 }
                                             }
                                         }
                                     }
-                                    
-                                    /*
-                                    snapShot.firstTrackPage.requestNextPage(withAccessToken: self.auth.session.accessToken, callback: { (error,snap2) in
-                                        if let snapShot2 = snap2 as? SPTPlaylistSnapshot {
-                                            if snapShot2.firstTrackPage != nil {
-                                                if snapShot2.firstTrackPage.items != nil {
-                                                    var y = 0
-                                                    while y < snapShot2.firstTrackPage.items.count {
-                                                        if let currTrack = snapShot2.firstTrackPage.items[y] as? SPTPlaylistTrack {
-                                                            if self.durationOfItems(self.itemsLength) + currTrack.duration < Double(Int(self.timerLengthSlider.value) * 60) + 15 && (!self.songHolder.contains(currTrack) || self.songHolder.count == 0) {
-                                                                self.songHolder.append(currTrack)
-                                                                self.itemsLength.append(currTrack.duration)
-                                                                self.itemUrls.append(currTrack.playableUri.absoluteString)
-                                                            }
-                                                        }
-                                                        y += 1
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    })
-                                     */
                                 }
+                                
+                                /*
+                                 snapShot.firstTrackPage.requestNextPage(withAccessToken: self.auth.session.accessToken, callback: { (error,snap2) in
+                                 if let snapShot2 = snap2 as? SPTPlaylistSnapshot {
+                                 if snapShot2.firstTrackPage != nil {
+                                 if snapShot2.firstTrackPage.items != nil {
+                                 var y = 0
+                                 while y < snapShot2.firstTrackPage.items.count {
+                                 if let currTrack = snapShot2.firstTrackPage.items[y] as? SPTPlaylistTrack {
+                                 if self.durationOfItems(self.itemsLength) + currTrack.duration < Double(Int(self.timerLengthSlider.value) * 60) + 15 && (!self.songHolder.contains(currTrack) || self.songHolder.count == 0) {
+                                 self.songHolder.append(currTrack)
+                                 self.itemsLength.append(currTrack.duration)
+                                 self.itemUrls.append(currTrack.playableUri.absoluteString)
+                                 }
+                                 }
+                                 y += 1
+                                 }
+                                 }
+                                 }
+                                 }
+                                 })
+                                 */
                             }
-                        })
-                    }
+                        }
+                    })
                 }
                 
                 if self.durationOfItems(self.itemsLength) < Double(Int(self.timerLengthSlider.value) * 60 - 30) || self.durationOfItems(self.itemsLength) > Double(Int(self.timerLengthSlider.value) * 60 + 15)  {
@@ -329,8 +397,13 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
         return totalDuration
     }
     
-    override var prefersStatusBarHidden: Bool {
-        return true
+    @IBAction func selectSource() {
+        choiceNames = [String]()
+        var x = 0
+        while x < self.usersPlaylist!.items.count {
+            choiceNames.append((self.usersPlaylist!.items[x] as! SPTPartialPlaylist).name)
+            x += 1
+        }
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -339,33 +412,59 @@ class ViewController: UIViewController, SPTCoreAudioControllerDelegate, UITableV
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = self.songTableView.dequeueReusableCell(withIdentifier: "musicCell") as! MusicCell
-        do {
-            let imgData = try Data(contentsOf: songHolder[indexPath.row].album.smallestCover.imageURL)
-            cell.trackThumbnail.image = UIImage(data: imgData)
-            cell.trackThumbnail.layer.cornerRadius = cell.trackThumbnail.image!.size.width/2
-            cell.trackThumbnail.clipsToBounds = true
-        } catch {
-            
+        if indexPath.row < songHolder.count {
+            do {
+                let imgData = try Data(contentsOf: songHolder[indexPath.row].album.smallestCover.imageURL)
+                cell.trackThumbnail.image = UIImage(data: imgData)
+                cell.trackThumbnail.layer.cornerRadius = cell.trackThumbnail.image!.size.width/2
+                cell.trackThumbnail.clipsToBounds = true
+            } catch {
+                
+            }
+            cell.trackInfo.text = songHolder[indexPath.row].name + " - " + (songHolder[indexPath.row].artists as! [SPTPartialArtist])[0].name
         }
-        cell.trackInfo.text = songHolder[indexPath.row].name + " - " + (songHolder[indexPath.row].artists as! [SPTPartialArtist])[0].name
-        
+            
         return cell
     }
-}
     
-    extension ViewController: SPTAudioStreamingDelegate, SPTAudioStreamingPlaybackDelegate {
-        func audioStreamingDidLogin(_ audioStreaming: SPTAudioStreamingController!) {
-            loginButton.isHidden = true
-            unitLabel.isHidden = false
-            minutesRemainingLabel.isHidden = false
-            timerLengthSlider.isHidden = false
-            playButton.isHidden = false
-            print("logged in")
-            
-        }
+    override var prefersStatusBarHidden: Bool {
+        return true
+    }
+}
+
+extension ViewController: SPTAudioStreamingDelegate, SPTAudioStreamingPlaybackDelegate {
+    func audioStreamingDidLogin(_ audioStreaming: SPTAudioStreamingController!) {
+        loginButton.isHidden = true
+        unitLabel.isHidden = false
+        sourceSelect.isHidden = false
+        minutesRemainingLabel.isHidden = false
+        timerLengthSlider.isHidden = false
+        playButton.isHidden = false
+        print("logged in")
         
-        func audioStreamingDidEncounterTemporaryConnectionError(_ audioStreaming: SPTAudioStreamingController!) {
-            print("Oh no...")
+    }
+    
+    func audioStreamingDidEncounterTemporaryConnectionError(_ audioStreaming: SPTAudioStreamingController!) {
+        print("Oh no...")
+    }
+    
+    func audioStreaming(_ audioStreaming: SPTAudioStreamingController!, didChangePlaybackStatus isPlaying: Bool) {
+        if isPlaying {
+            self.activateAudioSession()
+        } else {
+            self.deactivateAudioSession()
         }
     }
     
+    func activateAudioSession() {
+        try? AVAudioSession.sharedInstance().setCategory(AVAudioSessionCategoryPlayback)
+        try? AVAudioSession.sharedInstance().setActive(true)
+    }
+    
+    // MARK: Deactivate audio session
+    
+    func deactivateAudioSession() {
+        try? AVAudioSession.sharedInstance().setActive(false)
+    }
+}
+
